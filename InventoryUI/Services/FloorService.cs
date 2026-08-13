@@ -72,5 +72,10 @@ namespace InventoryUI.Services
                 return new List<GetAsset>();
             }
         }
+        public async Task<bool> DeleteAssetAsync(int id)
+        {
+            var response = await _http.DeleteAsync($"api/Asset/DeleteAsset/{id}");
+            return response.IsSuccessStatusCode;
+        }
     }
 }

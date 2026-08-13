@@ -42,6 +42,12 @@ namespace InventoryUI.Pages
                 // تصفير النموذج مع الإبقاء على رقم الغرفة
                 AssetModel = new Shared.DTOs.PostAsset { RoomId = RoomId };
             }
+            else
+            {
+                IsSuccess = false;
+                Message = "حدث خطأ أثناء الاتصال بالـ API وتنسيق البيانات.";
+            }
+
 
             IsSubmitting = false;
         }

@@ -12,5 +12,6 @@ namespace InventoryUI.Services
         Task<GetFloor?> GetFloorWithRoomsAsync(int floorId);
         Task<(bool Success, string Message)> AddAssetAsync(PostAsset assetDto);
         Task<List<GetAsset>> GetAssetsByRoomAsync(int roomId);
+        Task<bool> DeleteAssetAsync(int id);
     }
 }

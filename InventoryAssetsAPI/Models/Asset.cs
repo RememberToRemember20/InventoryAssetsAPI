@@ -7,7 +7,7 @@ namespace InventoryAssetsAPI.Models
     {
         [Key]
         public int Id { get; set; }
-        public int? BarCode { get; set; }
+        public long? BarCode { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public string? Note { get; set; }

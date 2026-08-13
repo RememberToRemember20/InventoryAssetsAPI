@@ -19,7 +19,7 @@ namespace InventoryAssetsAPI.Controllers
         [HttpPost("PostAsset")]
         public async Task<IActionResult> PostAsset([FromBody] Shared.DTOs.PostAsset postAsset)
         {
-            var exist =_unitOfWork.Assets.Get(q=>q.BarCode == postAsset.BarCode);
+            var exist =await _unitOfWork.Assets.Get(q=>q.BarCode == postAsset.BarCode);
             if (exist != null)
             {
                 return BadRequest("Asset with this barcode already exists.");
@@ -39,6 +39,31 @@ namespace InventoryAssetsAPI.Controllers
             var assets = await _unitOfWork.Assets.GetAll(q=>q.RoomId == roomid);
             var result = _mapper.Map<List<Shared.DTOs.GetAsset>>(assets);
             return Ok(result);
+        }
+        [HttpDelete("DeleteAsset/{id}")]
+        public async Task<IActionResult> DeleteAsset(int id)
+        {
+            var asset = await _unitOfWork.Assets.Get(q => q.Id == id);
+            if (asset == null)
+            {
+                return NotFound();
+            }
+            await _unitOfWork.Assets.Delete(id);
+            await _unitOfWork.Save();
+            return Ok();
+        }
+        [HttpPut("UpdateAsset/{id}")]
+        public async Task<IActionResult> UpdateAsset(int id, [FromBody] Shared.DTOs.PostAsset postAsset)
+        {
+            var asset = await _unitOfWork.Assets.Get(q => q.Id == id);
+            if (asset == null)
+            {
+                return NotFound();
+            }
+            _mapper.Map(postAsset, asset);
+             _unitOfWork.Assets.Update(asset);
+            await _unitOfWork.Save();
+            return Ok(postAsset);
         }
 
     }
