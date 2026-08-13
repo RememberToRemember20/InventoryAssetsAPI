@@ -1,0 +1,102 @@
+﻿@page "/rooms/{RoomId:int}/assets"
+
+<div class="container-fluid mt-4 mb-5" style="max-width: 1100px;">
+
+    <!-- أزرار أعلى الصفحة والعنوان -->
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <button class="btn btn-outline-secondary btn-sm mb-2" @onclick="GoBack">
+                <i class="bi bi-arrow-right me-1"></i> العودة للغرفة
+            </button>
+            <h3 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-box-seam-fill text-primary me-2"></i> قائمة الأصول في الغرفة #@RoomId
+            </h3>
+        </div>
+        <div>
+            <!-- زر إضافة أصل جديد في هذه الغرفة مباشرة -->
+            <a href="/rooms/@RoomId/add-asset" class="btn btn-success">
+                <i class="bi bi-plus-circle me-1"></i> إضافة أصل جديد
+            </a>
+        </div>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p class="mt-2 text-muted">جاري تحميل أصول الغرفة...</p>
+        </div>
+    }
+    else
+    {
+        <!-- شريط البحث والفلترة -->
+        <div class="card border-0 shadow-sm mb-4">
+            <div class="card-body p-3">
+                <div class="row g-2 align-items-center">
+                    <div class="col-md-6">
+                        <div class="input-group">
+                            <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
+                            <input type="text" class="form-control" placeholder="ابحث برقم الباركود أو اسم الأصل..." @bind="SearchTerm" @bind:event="oninput" />
+                        </div>
+                    </div>
+                    <div class="col-md-6 text-md-end text-muted small">
+                        إجمالي الأصول المعروضة: <strong class="text-dark">@FilteredAssets.Count()</strong>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        @if (!FilteredAssets.Any())
+        {
+            <div class="alert alert-info text-center py-5 shadow-sm">
+                <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
+                <h5>لا توجد أصول مطابقة في هذه الغرفة</h5>
+                <p class="text-muted small mb-0">قم بإضافة أصل جديد أو التأكد من كلمة البحث.</p>
+            </div>
+        }
+        else
+        {
+            <!-- جدول عرض الأصول -->
+            <div class="card border-0 shadow-sm overflow-hidden">
+                <div class="table-responsive">
+                    <table class="table table-hover align-middle mb-0">
+                        <thead class="table-light">
+                            <tr>
+                                <th style="width: 80px;">#</th>
+                                <th>الباركود (Barcode)</th>
+                                <th>اسم الأصل</th>
+                                <th>الوصف</th>
+                                <th class="text-end" style="width: 140px;">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var asset in FilteredAssets)
+                            {
+                                <tr>
+                                    <td class="fw-bold text-muted">#@asset.Id</td>
+                                    <td>
+                                        <span class="badge bg-dark font-monospace px-2 py-1">
+                                            <i class="bi bi-qr-code me-1"></i>@asset.BarCode
+                                        </span>
+                                    </td>
+                                    <td class="fw-bold text-dark">@asset.Name</td>
+                                    <td class="text-muted small">
+                                        @(string.IsNullOrWhiteSpace(asset.Description) ? "—" : asset.Description)
+                                    </td>
+                                    <td class="text-end">
+                                        <button class="btn btn-sm btn-outline-secondary me-1" title="تعديل">
+                                            <i class="bi bi-pencil"></i>
+                                        </button>
+                                        <button class="btn btn-sm btn-outline-danger" title="حذف">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        }
+    }
+</div>

@@ -1,0 +1,43 @@
+﻿@page "/add-floor"
+
+<div class="container mt-4" style="max-width: 600px;">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-plus-circle me-2"></i> إدخال طابق جديد</h5>
+        </div>
+        <div class="card-body">
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+                    @Message
+                </div>
+            }
+
+            <EditForm Model="FloorModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <div class="mb-3">
+                    <label for="floorName" class="form-label fw-bold">اسم أو رقم الطابق:</label>
+                    <InputText id="floorName" class="form-control" @bind-Value="FloorModel.Name" placeholder="مثال: الطابق الرابع" />
+                    <ValidationMessage For="@(() => FloorModel.Name)" class="text-danger small" />
+                </div>
+
+                <div class="d-flex justify-content-end gap-2">
+                    <button type="submit" class="btn btn-success" disabled="@IsSubmitting">
+                        @if (IsSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1" role="status"></span>
+                            <span>جاري الحفظ...</span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-check-lg"></i> حفظ الطابق</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+</div>

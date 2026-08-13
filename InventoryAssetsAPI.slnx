@@ -1,0 +1,5 @@
+<Solution>
+  <Project Path="InventoryAssetsAPI/InventoryAssetsAPI.csproj" />
+  <Project Path="InventoryUI/InventoryUI.csproj" Id="335d7269-8bfe-42bc-b333-96bd48729989" />
+  <Project Path="Shared/Shared.csproj" Id="c9e5b93f-dffa-43cc-8996-3d645e11b906" />
+</Solution>

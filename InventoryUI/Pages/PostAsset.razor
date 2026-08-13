@@ -1,0 +1,70 @@
+﻿@page "/rooms/{RoomId:int}/add-asset"
+
+<div class="container mt-4" style="max-width: 650px;">
+
+    <div class="mb-3">
+        <a href="/floors" class="btn btn-outline-secondary btn-sm">
+            <i class="bi bi-arrow-right me-1"></i> العودة للغرفة
+        </a>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-dark text-white d-flex justify-content-between align-items-center py-3">
+            <h5 class="mb-0"><i class="bi bi-box-seam text-warning me-2"></i> إضافة أصل جديد للغرفة</h5>
+            <span class="badge bg-primary fs-6">معرف الغرفة: #@RoomId</span>
+        </div>
+        <div class="card-body p-4">
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show" role="alert">
+                    @Message
+                </div>
+            }
+
+            <EditForm Model="AssetModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <!-- رقم الباركود -->
+                <div class="mb-3">
+                    <label for="barcode" class="form-label fw-bold">رقم الباركود (Unique Barcode):</label>
+                    <div class="input-group">
+                        <span class="input-group-text"><i class="bi bi-qr-code-scan"></i></span>
+                        <InputNumber id="barcode" class="form-control" @bind-Value="AssetModel.BarCode" placeholder="أدخل رقم الباركود أو امسحه بالماسح" />
+                    </div>
+                    <ValidationMessage For="@(() => AssetModel.BarCode)" class="text-danger small" />
+                </div>
+
+                <!-- اسم الأصل -->
+                <div class="mb-3">
+                    <label for="assetName" class="form-label fw-bold">اسم الأصل:</label>
+                    <InputText id="assetName" class="form-control" @bind-Value="AssetModel.Name" placeholder="مثال: شاشة Dell 27 بوصة / طابعة HP" />
+                    <ValidationMessage For="@(() => AssetModel.Name)" class="text-danger small" />
+                </div>
+
+                <!-- الوصف -->
+                <div class="mb-3">
+                    <label for="description" class="form-label fw-bold">وصف الأصل (إختياري):</label>
+                    <InputTextArea id="description" class="form-control" rows="3" @bind-Value="AssetModel.Description" placeholder="المواصفات، رقم السيريال، أو الحالة الفنية..." />
+                    <ValidationMessage For="@(() => AssetModel.Description)" class="text-danger small" />
+                </div>
+
+                <!-- أزرار الإجراءات -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <button type="submit" class="btn btn-primary px-4" disabled="@IsSubmitting">
+                        @if (IsSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                            <span>جاري الحفظ...</span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-check-circle me-1"></i> حفظ الأصل</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+</div>

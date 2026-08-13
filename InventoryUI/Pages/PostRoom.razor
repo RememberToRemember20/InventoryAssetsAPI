@@ -1,0 +1,67 @@
+﻿@page "/add-room"
+
+<div class="container mt-4" style="max-width: 600px;">
+    <div class="card shadow-sm border-0">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0"><i class="bi bi-door-open me-2"></i> إضافة غرفة جديدة</h5>
+        </div>
+        <div class="card-body">
+
+            @if (!string.IsNullOrEmpty(Message))
+            {
+                <div class="alert @(IsSuccess ? "alert-success" : "alert-danger") alert-dismissible fade show">
+                    @Message
+                </div>
+            }
+
+            <EditForm Model="RoomModel" OnValidSubmit="HandleSubmit">
+                <DataAnnotationsValidator />
+
+                <!-- اختيار الطابق عبر القائمة المنسدلة -->
+                <div class="mb-3">
+                    <label for="floorSelect" class="form-label fw-bold">اختر الطابق:</label>
+                    
+                    @if (IsLoadingFloors)
+                    {
+                        <div class="form-control text-muted">جاري تحميل قائمة الطوابق...</div>
+                    }
+                    else
+                    {
+                        <InputSelect id="floorSelect" class="form-select" @bind-Value="RoomModel.FloorId">
+                            <option value="0">-- اختر الطابق من القائمة --</option>
+                            @foreach (var floor in Floors)
+                            {
+                                <option value="@floor.Id">@floor.Name</option>
+                            }
+                        </InputSelect>
+                    }
+                    <ValidationMessage For="@(() => RoomModel.FloorId)" class="text-danger small" />
+                </div>
+
+                <!-- اسم أو رقم الغرفة -->
+                <div class="mb-3">
+                    <label for="roomName" class="form-label fw-bold">اسم أو رقم الغرفة:</label>
+                    <InputText id="roomName" class="form-control" @bind-Value="RoomModel.Name" placeholder="مثال: غرفة IT - 102" />
+                    <ValidationMessage For="@(() => RoomModel.Name)" class="text-danger small" />
+                </div>
+
+                <!-- أزرار الإجراءات -->
+                <div class="d-flex justify-content-end gap-2 mt-4">
+                    <a href="/floors" class="btn btn-outline-secondary">إلغاء</a>
+                    <button type="submit" class="btn btn-success" disabled="@IsSubmitting">
+                        @if (IsSubmitting)
+                        {
+                            <span class="spinner-border spinner-border-sm me-1"></span>
+                            <span>جاري الحفظ...</span>
+                        }
+                        else
+                        {
+                            <span><i class="bi bi-check-lg me-1"></i> حفظ الغرفة</span>
+                        }
+                    </button>
+                </div>
+            </EditForm>
+
+        </div>
+    </div>
+</div>
