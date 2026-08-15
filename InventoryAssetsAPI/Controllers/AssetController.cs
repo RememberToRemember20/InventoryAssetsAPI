@@ -65,6 +65,17 @@ namespace InventoryAssetsAPI.Controllers
             await _unitOfWork.Save();
             return Ok(postAsset);
         }
+        [HttpGet("GetAssetById/{id}")]
+        public async Task<IActionResult> GetAssetById(int id)
+        {
+            var asset = await _unitOfWork.Assets.Get(q => q.Id == id);
+            if (asset == null)
+            {
+                return NotFound();
+            }
+            var result = _mapper.Map<Shared.DTOs.GetAsset>(asset);
+            return Ok(result);
+        }
 
     }
 }

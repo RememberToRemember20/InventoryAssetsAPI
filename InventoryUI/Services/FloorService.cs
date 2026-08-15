@@ -77,5 +77,61 @@ namespace InventoryUI.Services
             var response = await _http.DeleteAsync($"api/Asset/DeleteAsset/{id}");
             return response.IsSuccessStatusCode;
         }
+        public async Task<GetAsset?> GetAssetByIdAsync(int id)
+        {
+            try
+            {
+                return await _http.GetFromJsonAsync<GetAsset>($"api/Asset/GetAssetById/{id}");
+            }
+            catch
+            {
+                return null;
+            }
+        }
+
+        // تحديث بيانات الأصل
+        public async Task<bool> UpdateAssetAsync(int id, PostAsset assetDto)
+        {
+            // افترضنا أن الـ Endpoint في الـ API اسمها UpdateAsset
+            var response = await _http.PutAsJsonAsync($"api/Asset/UpdateAsset/{id}", assetDto);
+            return response.IsSuccessStatusCode;
+        }
+
+        public async Task<int> StartSessionAsync(CreateAuditSessionDTO dto)
+        {
+            var response = await _http.PostAsJsonAsync("api/Session/StartSession", dto);
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<StartSessionResponseDTO>();
+            return result.SessionId; // بافتراض أن الـ API يرجع SessionId
+        }
+
+        public async Task<ScanResultDTO> ScanBarcodeAsync(ScanBarcodeDTO dto)
+        {
+            var response = await _http.PostAsJsonAsync("api/Session/ScanBarcode", dto);
+            response.EnsureSuccessStatusCode();
+
+            return await response.Content.ReadFromJsonAsync<ScanResultDTO>();
+        }
+
+        public async Task<AuditSummaryDTO> GetSessionSummaryAsync(int sessionId)
+        {
+            return await _http.GetFromJsonAsync<AuditSummaryDTO>($"api/Session/SessionSummary/{sessionId}");
+        }
+
+        public async Task<string> ReconcileSessionAsync(int sessionId)
+        {
+            var response = await _http.PostAsJsonAsync($"api/Session/ReconcileSession/{sessionId}", new { });
+            response.EnsureSuccessStatusCode();
+
+            var result = await response.Content.ReadFromJsonAsync<ReconcileSessionDTO>();
+            return result.Message;
+        }
+
+        public async Task<List<GetRoom>> GetRoomsAsync()
+        {
+            return await _http.GetFromJsonAsync<List<GetRoom>>("api/Room/GetRoom")
+                   ?? new List<GetRoom>();
+        }
     }
 }

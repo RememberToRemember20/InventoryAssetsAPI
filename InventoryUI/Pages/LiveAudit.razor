@@ -1,0 +1,108 @@
+﻿@page "/audit"
+@using Shared.DTOs
+
+
+<div class="container mt-4">
+    <h2 class="mb-4 text-primary">الجرد الميداني المباشر</h2>
+
+    @if (SessionId == 0)
+    {
+        <div class="card p-4 shadow-sm border-0 bg-light">
+            <h4 class="mb-3">تهيئة جلسة الجرد</h4>
+            <div class="row g-3">
+                <div class="col-md-8">
+                    <label class="form-label fw-bold">عنوان الجرد</label>
+                    <input type="text" class="form-control form-control-lg" @bind="Title" placeholder="مثال: جرد الربع الأول..." />
+                </div>
+                <div class="col-md-4">
+                    <label class="form-label fw-bold">الغرفة المستهدفة</label>
+                    <select class="form-select form-select-lg" @bind="RoomId" disabled="@IsLoading">
+                        <option value="0" disabled selected>-- اختر الغرفة --</option>
+                        @if (AvailableRooms != null)
+                        {
+                            @foreach (var room in AvailableRooms)
+                            {
+                                <option value="@room.Id">@room.Name</option>
+                            }
+                        }
+                    </select>
+                </div>
+            </div>
+            <button class="btn btn-primary btn-lg w-100 mt-4" @onclick="StartSessionAsync" disabled="@IsLoading">
+                @if (IsLoading)
+                {
+                    <span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                    <span> جاري التهيئة...</span>
+                }
+                else
+                {
+                    <span>بدء الجرد</span>
+                }
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="row">
+            <!-- الإحصائيات الحية -->
+            <div class="col-md-4 mb-3">
+                <div class="card shadow-sm border-0 summary-card">
+                    <div class="card-header bg-dark text-white fw-bold">
+                        ملخص الجلسة (#@SessionId)
+                    </div>
+                    <div class="card-body fs-5">
+                        <div class="d-flex justify-content-between mb-2">
+                            <span>المتوقع:</span>
+                            <span class="badge bg-secondary">@(Summary?.TotalExpectedAssets ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-success">مطابق:</span>
+                            <span class="badge bg-success">@(Summary?.MatchedCount ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-warning">منقول:</span>
+                            <span class="badge bg-warning text-dark">@(Summary?.MisplacedCount ?? 0)</span>
+                        </div>
+                        <div class="d-flex justify-content-between mb-2">
+                            <span class="text-danger">غير مسجل:</span>
+                            <span class="badge bg-danger">@(Summary?.UnexpectedCount ?? 0)</span>
+                        </div>
+                    </div>
+                    <div class="card-footer bg-white border-0">
+                        <button class="btn btn-success w-100" @onclick="ReconcileAndCloseAsync" disabled="@IsLoading">إغلاق واعتماد الجرد</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- منطقة المسح بالباركود -->
+            <div class="col-md-8">
+                <div class="card shadow-sm border-0 p-4 text-center scan-area">
+                    <h4 class="mb-3 text-muted">وجه جهاز الباركود وامسح الأصل</h4>
+
+                    <input type="text"
+                           @ref="BarcodeInputRef"
+                           class="form-control form-control-lg text-center mb-3 barcode-input"
+                           placeholder="[ مؤشر الباركود هنا ]"
+                           @bind="CurrentBarcode"
+                           @bind:event="oninput"
+                           @onkeyup="HandleKeyUpAsync"
+                           disabled="@IsLoading" />
+
+                    @if (LastResult != null)
+                    {
+                        var alertClass = LastResult.Status == ScanStatus.Matched ? "alert-success" :
+                                         LastResult.Status == ScanStatus.Misplaced ? "alert-warning" : "alert-danger";
+
+                        <div class="alert @alertClass mt-3 fs-5 status-alert">
+                            <strong>@LastResult.Message</strong>
+                            @if (!string.IsNullOrEmpty(LastResult.AssetName))
+                            {
+                                <div class="mt-2 text-dark">الأصل: @LastResult.AssetName</div>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        </div>
+    }
+</div>

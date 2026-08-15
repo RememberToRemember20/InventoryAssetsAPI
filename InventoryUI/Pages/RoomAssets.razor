@@ -84,12 +84,12 @@
                                         @(string.IsNullOrWhiteSpace(asset.Description) ? "—" : asset.Description)
                                     </td>
                                     <td class="text-end">
-                                        <button class="btn btn-sm btn-outline-secondary me-1" title="تعديل">
-                                            <i class="bi bi-pencil"></i>
+                                        <button class="btn btn-sm btn-outline-secondary me-1" title="تعديل" @onclick="() => EditAsset(asset.Id)">
+                                            <i class="bi bi-pencil"></i> تعديل
                                         </button>
-                                        <button class="btn btn-sm btn-outline-danger" title="حذف">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
+                                       <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmDelete(asset.Id, asset.Name)">
+                                           <i class="bi bi-trash"></i> حذف
+                                       </button>
                                     </td>
                                 </tr>
                             }

@@ -1,0 +1,93 @@
+﻿@page "/edit-asset/{AssetId:int}"
+
+<div class="container-fluid mt-4 mb-5" style="max-width: 800px;">
+    
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <button class="btn btn-outline-secondary btn-sm mb-2" @onclick="GoBack">
+                <i class="bi bi-arrow-right me-1"></i> إلغاء والعودة
+            </button>
+            <h3 class="fw-bold mb-0 text-dark">
+                <i class="bi bi-pencil-square text-warning me-2"></i> تعديل بيانات الأصل #@AssetId
+            </h3>
+        </div>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="text-center py-5">
+            <div class="spinner-border text-warning" role="status"></div>
+            <p class="mt-2 text-muted">جاري تحميل بيانات الأصل...</p>
+        </div>
+    }
+    else if (!string.IsNullOrEmpty(ErrorMessage))
+    {
+        <div class="alert alert-danger text-center shadow-sm">
+            @ErrorMessage
+        </div>
+    }
+    else
+    {
+        <div class="card border-0 shadow-sm">
+            <div class="card-body p-4">
+                <EditForm Model="AssetModel" OnValidSubmit="HandleValidSubmit">
+                    <DataAnnotationsValidator />
+                    
+                    <div class="row g-3">
+                        <!-- اسم الأصل -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">اسم الأصل <span class="text-danger">*</span></label>
+                            <InputText @bind-Value="AssetModel.Name" class="form-control" placeholder="أدخل اسم الأصل..." />
+                            <ValidationMessage For="@(() => AssetModel.Name)" class="text-danger small" />
+                        </div>
+
+                        <!-- رقم الباركود -->
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">الباركود (Barcode) <span class="text-danger">*</span></label>
+                            <InputNumber @bind-Value="AssetModel.BarCode" class="form-control" placeholder="أدخل رقم الباركود..." />
+                            <ValidationMessage For="@(() => AssetModel.BarCode)" class="text-danger small" />
+                        </div>
+
+                        <!-- اختيار الموقع / الغرفة (القائمة المنسدلة) -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">موقع الأصل (الغرفة) <span class="text-danger">*</span></label>
+                            <InputSelect @bind-Value="AssetModel.RoomId" class="form-select">
+                                <option value="0" disabled>-- اختر الغرفة --</option>
+                                @foreach (var floor in Floors)
+                                {
+                                    <optgroup label="🏢 @floor.Name">
+                                        @if (floor.Rooms != null && floor.Rooms.Any())
+                                        {
+                                            @foreach (var room in floor.Rooms)
+                                            {
+                                                <option value="@room.Id">غرفة: @room.Name </option>
+                                            }
+                                        }
+                                        else
+                                        {
+                                            <option value="" disabled>لا توجد غرف في هذا الطابق</option>
+                                        }
+                                    </optgroup>
+                                }
+                            </InputSelect>
+                            <ValidationMessage For="@(() => AssetModel.RoomId)" class="text-danger small" />
+                        </div>
+
+                        <!-- الوصف -->
+                        <div class="col-12">
+                            <label class="form-label fw-bold">الوصف (اختياري)</label>
+                            <InputTextArea @bind-Value="AssetModel.Description" class="form-control" rows="3" placeholder="أضف وصفاً للأصل..." />
+                            <ValidationMessage For="@(() => AssetModel.Description)" class="text-danger small" />
+                        </div>
+                    </div>
+
+                    <div class="mt-4 text-end border-top pt-3">
+                        <button type="submit" class="btn btn-warning px-4 fw-bold text-dark">
+                            <i class="bi bi-save me-1"></i> حفظ التعديلات
+                        </button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    }
+</div>

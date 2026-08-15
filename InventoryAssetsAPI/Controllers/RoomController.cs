@@ -50,6 +50,13 @@ namespace InventoryAssetsAPI.Controllers
             var result = _mapper.Map<GetRoom>(room);
             return Ok(result);
         }
+        [HttpGet("GetRoom")]
+        public async Task<IActionResult> GetRoom()
+        {
+            var rooms = await _unitOfWork.Rooms.GetAll();
+            var result = _mapper.Map<List<GetRoom>>(rooms);
+            return Ok(result);
+        }
 
     }
 }

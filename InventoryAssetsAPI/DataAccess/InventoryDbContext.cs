@@ -18,5 +18,9 @@ namespace InventoryAssetsAPI.DataAccess
                 .IsUnique();
         }
         public DbSet<Floor> Floors { get; set; }
+        public DbSet<Room> Rooms { get; set; }
+        public DbSet<Asset> Assets { get; set; }
+        public DbSet<AuditSession>AuditSessions{ get; set; }
+        public DbSet<AuditDetail> AuditDetails { get; set; }
     }
 }
