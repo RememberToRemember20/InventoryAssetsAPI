@@ -98,7 +98,7 @@ namespace InventoryAssetsAPI.Controllers
                 {
                     AuditSessionId = session.Id,
                     ScannedBarCode = dto.BarCode,
-                    AssetId = asset.Id,
+                    AssetId = asset?.Id,
                     ScannedRoomId = session.RoomId,
                     ExpectedRoomId = expectedRoomId,
                     Status = status,
@@ -220,6 +220,13 @@ namespace InventoryAssetsAPI.Controllers
             if (result == null)
                 return NotFound("لم يتم العثور على بيانات التقرير.");
 
+            return Ok(result);
+        }
+        [HttpGet("sessions")]
+        public async Task<ActionResult<List<AuditSessionListDTO>>> GetAllSessions()
+        {
+            var query = new GetAllAuditSessionsQuery();
+            var result = await _mediator.Send(query);
             return Ok(result);
         }
     }

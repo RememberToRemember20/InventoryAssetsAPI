@@ -1,0 +1,78 @@
+﻿@page "/audit/reports"
+@using Shared.DTOs
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary"><i class="bi bi-journal-text"></i> قائمة تقارير الجرد</h2>
+        <button class="btn btn-primary" @onclick="NavigateToNewAudit">
+            <i class="bi bi-plus-lg"></i> جلسة جرد جديدة
+        </button>
+    </div>
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-0">
+            @if (IsLoading)
+            {
+                <div class="text-center p-5">
+                    <div class="spinner-border text-primary" role="status"></div>
+                    <div class="mt-2">جاري تحميل التقارير...</div>
+                </div>
+            }
+            else if (Sessions == null || !Sessions.Any())
+            {
+                <div class="alert alert-info m-3 text-center">
+                    لا يوجد أي جلسات جرد مسجلة حتى الآن.
+                </div>
+            }
+            else
+            {
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-dark">
+                            <tr>
+                                <th>#</th>
+                                <th>عنوان الجرد</th>
+                                <th>الموقع (الطابق / الغرفة)</th>
+                                <th>تاريخ البدء</th>
+                                <th>تاريخ الإغلاق</th>
+                                <th>الحالة</th>
+                                <th class="text-center">الإجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (var session in Sessions)
+                            {
+                                <tr>
+                                    <td>@session.Id</td>
+                                    <td class="fw-bold">@session.Title</td>
+                                    <td>@session.FloorName / @session.RoomName</td>
+                                    <td>@session.StartTime.ToString("yyyy/MM/dd hh:mm tt")</td>
+                                    <td>
+                                        @(session.EndTime.HasValue ? session.EndTime.Value.ToString("yyyy/MM/dd hh:mm tt") : "-")
+                                    </td>
+                                    <td>
+                                        @if (session.IsClosed)
+                                        {
+                                            <span class="badge bg-success">مغلقة (مكتملة)</span>
+                                        }
+                                        else
+                                        {
+                                            <span class="badge bg-warning text-dark">مفتوحة (قيد الجرد)</span>
+                                        }
+                                    </td>
+                                    <td class="text-center">
+                                        <!-- زر عرض تقرير المطابقة -->
+                                        <button class="btn btn-sm btn-outline-primary"
+                                                @onclick="() => ViewReport(session.Id)">
+                                            <i class="bi bi-eye"></i> عرض التقرير
+                                        </button>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            }
+        </div>
+    </div>
+</div>

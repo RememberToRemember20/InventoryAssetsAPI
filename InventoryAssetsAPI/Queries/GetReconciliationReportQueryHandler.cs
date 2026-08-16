@@ -13,7 +13,25 @@ namespace InventoryAssetsAPI.Queries
         {
             _unitOfWork = unitOfWork;
         }
+        public async Task<List<AuditSessionListDTO>> Handle(GetAllAuditSessionsQuery request, CancellationToken cancellationToken)
+        {
+            // نستخدم مستودعك الرائع مع الـ delegates
+            var sessions = await _unitOfWork.AuditSession.GetAll(
+                orderBy: q => q.OrderByDescending(s => s.CreatedAt), // الأحدث أولاً
+                include: q => q.Include(s => s.Room).ThenInclude(r => r.Floor)
+            );
 
+            return sessions.Select(s => new AuditSessionListDTO
+            {
+                Id = s.Id,
+                Title = s.Title,
+                RoomName = s.Room?.Name ?? "غير محدد",
+                FloorName = s.Room?.Floor?.Name ?? "غير محدد",
+                StartTime = s.CreatedAt,
+                EndTime = s.CompletedAt,
+                IsClosed = s.CompletedAt.HasValue // إذا كان هناك تاريخ إغلاق، الجلسة مغلقة
+            }).ToList();
+        }
         public async Task<ReconciliationReportDTO> Handle(GetReconciliationReportQuery request, CancellationToken cancellationToken)
         {
             // 1. جلب بيانات الجلسة مع الغرفة باستخدام دالة Get الموجودة في الـ Repository
@@ -59,7 +77,7 @@ namespace InventoryAssetsAPI.Queries
                 {
                     report.Items.Add(new ReconciliationItemDTO
                     {
-                        Barcode = "غير معروف", // أو يمكنك استخدام detail.Barcode إذا كان جدول AuditDetail يحتوي على حقل الباركود الممسوح
+                        Barcode =0, // أو يمكنك استخدام detail.Barcode إذا كان جدول AuditDetail يحتوي على حقل الباركود الممسوح
                         AssetNumber = 0,
                         AssetName = "أصل غير مسجل في النظام",
                         FloorName = "غير محدد",

@@ -17,8 +17,10 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperInitilizer>());
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
-builder.Services.AddMediatR(cfg =>
-    cfg.RegisterServicesFromAssembly(typeof(GetReconciliationReportQueryHandler).Assembly));
+builder.Services.AddMediatR(cfg => {
+    cfg.RegisterServicesFromAssembly(typeof(GetReconciliationReportQueryHandler).Assembly);
+    cfg.RegisterServicesFromAssembly(typeof(GetAllAuditSessionsQueryHandler).Assembly);
+});
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorApp", policy =>

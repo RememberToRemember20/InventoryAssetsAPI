@@ -145,5 +145,10 @@ namespace InventoryUI.Services
 
             return report;
         }
+        public async Task<List<AuditSessionListDTO>> GetAllAuditSessionsAsync()
+        {
+            return await _http.GetFromJsonAsync<List<AuditSessionListDTO>>("api/Session/sessions")
+                   ?? new List<AuditSessionListDTO>();
+        }
     }
 }

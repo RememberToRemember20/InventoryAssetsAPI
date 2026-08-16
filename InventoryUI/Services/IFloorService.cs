@@ -21,5 +21,6 @@ namespace InventoryUI.Services
         Task<AuditSummaryDTO> GetSessionSummaryAsync(int sessionId);
         Task<string> ReconcileSessionAsync(int sessionId);
         Task<ReconciliationReportDTO> GetReconciliationReportAsync(int sessionId);
+        Task<List<AuditSessionListDTO>> GetAllAuditSessionsAsync();
     }
 }

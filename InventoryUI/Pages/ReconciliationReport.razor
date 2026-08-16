@@ -85,15 +85,21 @@
                                 <td>
                                     @if (item.Status == ScanStatus.Matched)
                                     {
-                                        <span class="badge bg-success">مطابق</span>
+                                        <span class="badge bg-success">مطابق لمكانه</span>
                                     }
                                     else if (item.Status == ScanStatus.Misplaced)
                                     {
-                                        <span class="badge bg-warning text-dark">منقول من غرفة أخرى</span>
+                                        <div class="d-flex flex-column">
+                                            <span class="badge bg-warning text-dark mb-1">منقول (موجود هنا بالخطأ)</span>
+                                            <small class="text-danger fw-bold">
+                                                <i class="bi bi-info-circle"></i>
+                                                مسجل أساساً في: @(string.IsNullOrEmpty(item.RoomName) ? "غير محدد" : item.RoomName)
+                                            </small>
+                                        </div>
                                     }
                                     else if (item.Status == ScanStatus.Unexpected)
                                     {
-                                        <span class="badge bg-danger">مفقود</span>
+                                        <span class="badge bg-danger">مفقود (لم يُجرد)</span>
                                     }
                                 </td>
                             </tr>
