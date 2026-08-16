@@ -1,6 +1,7 @@
 using InventoryAssetsAPI.DataAccess;
 using InventoryAssetsAPI.IRepository;
 using InventoryAssetsAPI.Models.Entity;
+using InventoryAssetsAPI.Queries;
 using InventoryAssetsAPI.Repository;
 using Microsoft.EntityFrameworkCore;
 
@@ -16,6 +17,8 @@ builder.Services.AddDbContext<InventoryDbContext>(options =>
 builder.Services.AddAutoMapper(cfg => cfg.AddProfile<MapperInitilizer>());
 builder.Services.AddScoped(typeof(IGenericRepository<>), typeof(GenericRepository<>));
 builder.Services.AddTransient<IUnitOfWork, UnitOfWork>();
+builder.Services.AddMediatR(cfg =>
+    cfg.RegisterServicesFromAssembly(typeof(GetReconciliationReportQueryHandler).Assembly));
 builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazorApp", policy =>

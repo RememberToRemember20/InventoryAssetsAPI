@@ -10,7 +10,8 @@ namespace InventoryUI.Pages
     {
         [Inject]
         public IFloorService AuditService { get; set; } = default!;
-
+        [Inject]
+        public NavigationManager NavManager { get; set; } = default!;
         protected ElementReference BarcodeInputRef;
 
         protected int SessionId { get; set; } = 0;
@@ -106,7 +107,7 @@ namespace InventoryUI.Pages
             try
             {
                 await AuditService.ReconcileSessionAsync(SessionId);
-
+                NavManager.NavigateTo($"/audit/report/{SessionId}");
                 // إعادة التهيئة لبدء جرد غرفة جديدة
                 SessionId = 0;
                 LastResult = null;

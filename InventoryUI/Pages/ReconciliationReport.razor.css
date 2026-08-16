@@ -1,0 +1,43 @@
+/* تنسيقات الشاشة */
+.table th, .table td {
+    vertical-align: middle;
+}
+
+/* تنسيقات الطباعة الورقية */
+@media print {
+    body {
+        background-color: white !important;
+    }
+
+    .container-fluid {
+        width: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    .card {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+    .table {
+        border-collapse: collapse !important;
+    }
+
+        .table th {
+            background-color: #f8f9fa !important;
+            color: black !important;
+            border: 1px solid #dee2e6 !important;
+        }
+
+        .table td {
+            border: 1px solid #dee2e6 !important;
+        }
+
+    /* تحويل الـ Badges إلى نصوص عادية في الطباعة لتوفير الحبر */
+    .badge {
+        border: 1px solid #000;
+        color: #000 !important;
+        background-color: transparent !important;
+    }
+}

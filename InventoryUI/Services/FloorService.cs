@@ -133,5 +133,17 @@ namespace InventoryUI.Services
             return await _http.GetFromJsonAsync<List<GetRoom>>("api/Room/GetRoom")
                    ?? new List<GetRoom>();
         }
+        public async Task<ReconciliationReportDTO> GetReconciliationReportAsync(int sessionId)
+        {
+            var response = await _http.GetAsync($"api/Session/report/{sessionId}");
+            response.EnsureSuccessStatusCode();
+
+            var report = await response.Content.ReadFromJsonAsync<ReconciliationReportDTO>();
+
+            if (report == null)
+                throw new Exception("فشل في تحليل بيانات التقرير.");
+
+            return report;
+        }
     }
 }

@@ -1,6 +1,8 @@
 ﻿using AutoMapper;
 using InventoryAssetsAPI.IRepository;
 using InventoryAssetsAPI.Models;
+using InventoryAssetsAPI.Queries;
+using MediatR;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -14,10 +16,12 @@ namespace InventoryAssetsAPI.Controllers
     {
         private readonly IUnitOfWork _unitOfWork;
         private readonly IMapper _mapper;
-        public SessionController(IUnitOfWork unitOfWork, IMapper mapper)
+        private readonly IMediator _mediator;
+        public SessionController(IUnitOfWork unitOfWork, IMapper mapper, IMediator mediator)
         {
             _unitOfWork=unitOfWork;
             _mapper=mapper;
+            _mediator=mediator;
         }
         [HttpPost("StartSession")]
         public async Task<IActionResult> StartSession([FromBody] CreateAuditSessionDTO dto)
@@ -94,7 +98,7 @@ namespace InventoryAssetsAPI.Controllers
                 {
                     AuditSessionId = session.Id,
                     ScannedBarCode = dto.BarCode,
-                    AssetId = asset?.Id,
+                    AssetId = asset.Id,
                     ScannedRoomId = session.RoomId,
                     ExpectedRoomId = expectedRoomId,
                     Status = status,
@@ -206,6 +210,17 @@ namespace InventoryAssetsAPI.Controllers
              //   _logger.LogError(ex, $"خطأ أثناء تسوية واعتماد الجلسة رقم {sessionId}");
                 return StatusCode(500, "حدث خطأ داخلي أثناء اعتماد الجرد.");
             }
+        }
+        [HttpGet("report/{sessionId}")]
+        public async Task<ActionResult<ReconciliationReportDTO>> GetReconciliationReport(int sessionId)
+        {
+            var query = new GetReconciliationReportQuery(sessionId);
+            var result = await _mediator.Send(query);
+
+            if (result == null)
+                return NotFound("لم يتم العثور على بيانات التقرير.");
+
+            return Ok(result);
         }
     }
 }

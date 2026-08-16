@@ -1,0 +1,106 @@
+﻿@page "/audit/report/{SessionId:int}"
+@using Shared.DTOs
+
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2 class="text-primary">تقرير مطابقة الجرد</h2>
+        <button class="btn btn-outline-secondary d-print-none" @onclick="PrintReport">
+            <i class="bi bi-printer"></i> طباعة التقرير
+        </button>
+    </div>
+
+    @if (IsLoading)
+    {
+        <div class="text-center mt-5">
+            <div class="spinner-border text-primary" role="status"></div>
+            <h5 class="mt-2">جاري تحميل التقرير...</h5>
+        </div>
+    }
+    else if (Report == null)
+    {
+        <div class="alert alert-danger">لم يتم العثور على بيانات لهذه الجلسة.</div>
+    }
+    else
+    {
+        <!-- البطاقات الإحصائية العلوية -->
+        <div class="row mb-4 d-print-none">
+            <div class="col-md-4">
+                <div class="card text-white bg-success shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">الأصول المطابقة</h5>
+                        <h2 class="mb-0">@Report.TotalMatched</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-dark bg-warning shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">الأصول المنقولة (موجودة هنا خطأ)</h5>
+                        <h2 class="mb-0">@Report.TotalMisplaced</h2>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div class="card text-white bg-danger shadow-sm">
+                    <div class="card-body">
+                        <h5 class="card-title">الأصول المفقودة (لم تُجرد)</h5>
+                        <h2 class="mb-0">@Report.TotalMissing</h2>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- معلومات الجلسة -->
+        <div class="card mb-4 border-0 shadow-sm">
+            <div class="card-header bg-light fw-bold">
+                تفاصيل الجلسة: @Report.SessionTitle (رقم: #@Report.SessionId)
+            </div>
+            
+            <!-- جدول التفاصيل -->
+            <div class="table-responsive">
+                <table class="table table-hover table-striped mb-0 align-middle">
+                    <thead class="table-dark">
+                        <tr>
+                            <th>الباركود</th>
+                            <th>رقم الأصل</th>
+                            <th>الاسم والمواصفات</th>
+                            <th>الطابق</th>
+                            <th>الغرفة</th>
+                            <th>الحالة</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var item in Report.Items)
+                        {
+                            <tr>
+                                <td><span class="badge bg-secondary font-monospace">@item.Barcode</span></td>
+                                <td>@item.AssetNumber</td>
+                                <td>
+                                    <div class="fw-bold">@item.AssetName</div>
+                                    <div class="text-muted small">@item.Specifications</div>
+                                </td>
+                                <td>@item.FloorName</td>
+                                <td>@item.RoomName</td>
+                                <td>
+                                    @if (item.Status == ScanStatus.Matched)
+                                    {
+                                        <span class="badge bg-success">مطابق</span>
+                                    }
+                                    else if (item.Status == ScanStatus.Misplaced)
+                                    {
+                                        <span class="badge bg-warning text-dark">منقول من غرفة أخرى</span>
+                                    }
+                                    else if (item.Status == ScanStatus.Unexpected)
+                                    {
+                                        <span class="badge bg-danger">مفقود</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

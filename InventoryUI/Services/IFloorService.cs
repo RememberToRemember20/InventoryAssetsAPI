@@ -20,5 +20,6 @@ namespace InventoryUI.Services
         Task<ScanResultDTO> ScanBarcodeAsync(ScanBarcodeDTO dto);
         Task<AuditSummaryDTO> GetSessionSummaryAsync(int sessionId);
         Task<string> ReconcileSessionAsync(int sessionId);
+        Task<ReconciliationReportDTO> GetReconciliationReportAsync(int sessionId);
     }
 }
