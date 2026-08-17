@@ -9,6 +9,7 @@ namespace InventoryAssetsAPI.IRepository
         public IGenericRepository<Asset> Assets { get; }
         public IGenericRepository<AuditSession> AuditSession { get; }
         public IGenericRepository<AuditDetail> AuditDetail { get; }
+        public IGenericRepository<AuditReportItem> AuditReportItems { get; }
         Task Save();
     }
 }

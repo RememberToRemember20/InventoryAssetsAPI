@@ -22,5 +22,6 @@ namespace InventoryAssetsAPI.DataAccess
         public DbSet<Asset> Assets { get; set; }
         public DbSet<AuditSession>AuditSessions{ get; set; }
         public DbSet<AuditDetail> AuditDetails { get; set; }
+        public DbSet<AuditReportItem> AuditReportItems { get; set; }
     }
 }

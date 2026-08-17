@@ -45,5 +45,6 @@ namespace InventoryAssetsAPI.Models.Entity
     .ForMember(dest => dest.AssetName, opt =>
         opt.MapFrom(src => src.Asset != null ? src.Asset.Name : "غير معروف"));
         }
+        
     }
 }

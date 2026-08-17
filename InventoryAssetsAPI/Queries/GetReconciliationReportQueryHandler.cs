@@ -33,8 +33,7 @@ namespace InventoryAssetsAPI.Queries
             }).ToList();
         }
         public async Task<ReconciliationReportDTO> Handle(GetReconciliationReportQuery request, CancellationToken cancellationToken)
-        {
-            // 1. جلب بيانات الجلسة مع الغرفة باستخدام دالة Get الموجودة في الـ Repository
+        {// 1. جلب بيانات الجلسة مع الغرفة
             var session = await _unitOfWork.AuditSession.Get(
                 expression: s => s.Id == request.SessionId,
                 include: q => q.Include(s => s.Room)
@@ -43,8 +42,52 @@ namespace InventoryAssetsAPI.Queries
             if (session == null)
                 throw new Exception($"لم يتم العثور على جلسة جرد بالرقم {request.SessionId}");
 
-            // 2. جلب جميع عمليات المسح التي تمت في هذه الجلسة
-            // لاحظ كيف نستخدم ThenInclude المتسلسلة داخل متغير include الأول
+            // 2. تهيئة التقرير النهائي (لاحظ أنني أعدت تفعيل سطر ClosedAt)
+            var report = new ReconciliationReportDTO
+            {
+                SessionId = session.Id,
+                SessionTitle = session.Title,
+                ClosedAt = session.CompletedAt ?? DateTime.Now,
+                Items = new List<ReconciliationItemDTO>()
+            };
+
+            // ==========================================
+            // 🔴 القسم الأول: إذا كانت الجلسة مغلقة -> جلب البيانات المجمدة من قاعدة البيانات
+            // ==========================================
+            if (session.IsClosed)
+            {
+                var frozenItems = await _unitOfWork.AuditReportItems.GetAll(
+                    expression: r => r.AuditSessionId == session.Id
+                );
+
+                foreach (var item in frozenItems)
+                {
+                    report.Items.Add(new ReconciliationItemDTO
+                    {
+                        AssetNumber = item.AssetId,
+                        // إذا كان نوع الباركود في التقرير long/int وفي الجدول string قد تحتاج لعمل parse هنا
+                        // مثال: Barcode = long.Parse(item.Barcode), 
+                        Barcode = item.Barcode,
+                        AssetName = item.AssetName,
+                        FloorName = item.FloorNameAtAudit,
+                        RoomName = item.RoomNameAtAudit,
+                        Status = item.Status
+                    });
+                }
+
+                // حساب الإحصائيات للتقرير المجمد
+                report.TotalMatched = report.Items.Count(i => i.Status == ScanStatus.Matched);
+                report.TotalMisplaced = report.Items.Count(i => i.Status == ScanStatus.Misplaced);
+                report.TotalMissing = report.Items.Count(i => i.Status == ScanStatus.Unexpected);
+
+                return report;
+            }
+
+            // ==========================================
+            // 🟢 القسم الثاني: إذا كانت الجلسة مفتوحة -> الحساب الحي (كودك الأصلي الممتاز)
+            // ==========================================
+
+            // 3. جلب جميع عمليات المسح
             var scannedDetails = await _unitOfWork.AuditDetail.GetAll(
                 expression: d => d.AuditSessionId == request.SessionId,
                 include: q => q.Include(d => d.Asset)
@@ -52,42 +95,31 @@ namespace InventoryAssetsAPI.Queries
                                .ThenInclude(r => r.Floor)
             );
 
-            // 3. جلب الأصول "المتوقعة" في هذه الغرفة
+            // 4. جلب الأصول "المتوقعة" في هذه الغرفة
             var expectedAssets = await _unitOfWork.Assets.GetAll(
                 expression: a => a.RoomId == session.RoomId,
                 include: q => q.Include(a => a.Room)
                                .ThenInclude(r => r.Floor)
             );
 
-            // 4. تهيئة التقرير النهائي
-            var report = new ReconciliationReportDTO
-            {
-                SessionId = session.Id,
-                SessionTitle = session.Title,
-               // ClosedAt = session. ?? DateTime.Now,
-                Items = new List<ReconciliationItemDTO>()
-            };
-
             // 5. استخراج "المطابق" و "المنقول" أو "غير المسجل"
             foreach (var detail in scannedDetails)
             {
-                // ------------- التعديل هنا -------------
                 // التحقق من أن الأصل موجود فعلاً في النظام
                 if (detail.Asset == null)
                 {
                     report.Items.Add(new ReconciliationItemDTO
                     {
-                        Barcode =0, // أو يمكنك استخدام detail.Barcode إذا كان جدول AuditDetail يحتوي على حقل الباركود الممسوح
+                        Barcode = 0, // أو detail.Barcode حسب تصميم الداتابيز عندك
                         AssetNumber = 0,
                         AssetName = "أصل غير مسجل في النظام",
                         FloorName = "غير محدد",
                         RoomName = "غير محدد",
-                        Status = ScanStatus.Misplaced // نعامله معاملة الأصل الغريب عن الغرفة
+                        Status = ScanStatus.Misplaced // نعامله كأصل غريب
                     });
 
-                    continue; // تخطي الأسطر القادمة والانتقال للسطر التالي في الحلقة
+                    continue;
                 }
-                // ----------------------------------------
 
                 bool isMatched = detail.Asset.RoomId == session.RoomId;
 
@@ -103,15 +135,13 @@ namespace InventoryAssetsAPI.Queries
             }
 
             // 6. استخراج الأصول "المفقودة"
-            // ------------- التعديل هنا -------------
-            // يجب أن نستثني الـ Assets التي كانت Null حتى لا يحدث خطأ هنا أيضاً
             var scannedAssetIds = scannedDetails
                 .Where(d => d.Asset != null)
                 .Select(d => d.AssetId)
                 .ToHashSet();
 
             var missingAssets = expectedAssets.Where(ea => !scannedAssetIds.Contains(ea.Id));
-            // ----------------------------------------
+
             foreach (var missing in missingAssets)
             {
                 report.Items.Add(new ReconciliationItemDTO
@@ -119,14 +149,13 @@ namespace InventoryAssetsAPI.Queries
                     Barcode = missing.BarCode,
                     AssetNumber = missing.Id,
                     AssetName = missing.Name,
-                   // Specifications = missing.Specifications ?? "",
                     FloorName = missing.Room?.Floor?.Name ?? "غير محدد",
                     RoomName = missing.Room?.Name ?? "غير محدد",
                     Status = ScanStatus.Unexpected
                 });
             }
 
-            // 7. حساب الإحصائيات
+            // 7. حساب الإحصائيات للتقرير الحي
             report.TotalMatched = report.Items.Count(i => i.Status == ScanStatus.Matched);
             report.TotalMisplaced = report.Items.Count(i => i.Status == ScanStatus.Misplaced);
             report.TotalMissing = report.Items.Count(i => i.Status == ScanStatus.Unexpected);

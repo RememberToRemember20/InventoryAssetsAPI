@@ -165,7 +165,7 @@ namespace InventoryAssetsAPI.Controllers
         {
             try
             {
-                // 1. جلب الجلسة والتفاصيل
+                // 1. جلب الجلسة
                 var session = await _unitOfWork.AuditSession.Get(
                     expression: s => s.Id == sessionId,
                     include: query => query.Include(s => s.Details)
@@ -177,37 +177,53 @@ namespace InventoryAssetsAPI.Controllers
                 if (session.IsClosed)
                     return BadRequest("هذه الجلسة معتمدة ومغلقة مسبقاً.");
 
-                // 2. فلترة الأصول المنقولة (Misplaced) لتحديث أماكنها
+                // 2. تحديث أماكن الأصول المنقولة (كودك الأصلي الممتاز)
                 var misplacedDetails = session.Details
                     .Where(d => d.Status == ScanStatus.Misplaced && d.AssetId.HasValue)
                     .ToList();
 
                 foreach (var detail in misplacedDetails)
                 {
-                    // جلب الأصل من قاعدة البيانات
                     var assetToMove = await _unitOfWork.Assets.Get(a => a.Id == detail.AssetId);
                     if (assetToMove != null)
                     {
-                        // تحديث موقع الأصل ليكون في هذه الغرفة الجديدة
                         assetToMove.RoomId = session.RoomId;
-                        _unitOfWork.Assets.Update(assetToMove); // تحديث الحالة إلى Modified
+                        _unitOfWork.Assets.Update(assetToMove);
                     }
                 }
 
-                // 3. إغلاق الجلسة
+                // ==========================================
+                // 3. هنا الاحترافية: نطلب التقرير الحي عبر MediatR قبل إغلاق الجلسة
+                // ==========================================
+                var liveReport = await _mediator.Send(new GetReconciliationReportQuery(sessionId));
+
+                // 4. تحويل نتيجة التقرير الحي إلى كيانات لتجميدها في قاعدة البيانات
+                var reportEntities = liveReport.Items.Select(item => new AuditReportItem
+                {
+                    AuditSessionId = sessionId,
+                    AssetId = item.AssetNumber,
+                    Barcode = item.Barcode,
+                    AssetName = item.AssetName,
+                    FloorNameAtAudit = item.FloorName,
+                    RoomNameAtAudit = item.RoomName,
+                    Status = item.Status
+                }).ToList();
+
+                await _unitOfWork.AuditReportItems.InsertRange(reportEntities); // تأكد من إضافة AuditReportItems للـ IUnitOfWork
+
+                // 5. إغلاق الجلسة
                 session.IsClosed = true;
                 session.CompletedAt = DateTime.UtcNow;
 
-                _unitOfWork.AuditSession.Update(session); // تحديث حالة الجلسة
+                _unitOfWork.AuditSession.Update(session);
 
-                // 4. حفظ التغييرات دفعة واحدة (Transaction-like behavior)
+                // 6. حفظ كل شيء دفعة واحدة (Transaction)
                 await _unitOfWork.Save();
 
-                return Ok(new { Message = "تم اعتماد الجرد وتحديث مواقع الأصول بنجاح." });
+                return Ok(new { Message = "تم اعتماد الجرد، تحديث مواقع الأصول، وتجميد التقرير بنجاح." });
             }
             catch (Exception ex)
             {
-             //   _logger.LogError(ex, $"خطأ أثناء تسوية واعتماد الجلسة رقم {sessionId}");
                 return StatusCode(500, "حدث خطأ داخلي أثناء اعتماد الجرد.");
             }
         }
