@@ -8,7 +8,7 @@ namespace Shared.DTOs
     {
         public int SessionId { get; set; }
         public string SessionTitle { get; set; } = string.Empty;
-        public DateTime ClosedAt { get; set; }
+        public DateTime? ClosedAt { get; set; }
 
         // إحصائيات سريعة للوحة العلوية
         public int TotalMatched { get; set; }

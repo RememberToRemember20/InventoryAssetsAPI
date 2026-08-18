@@ -41,9 +41,30 @@ namespace InventoryAssetsAPI.Models.Entity
                 // لذلك نتجاهلها في الـ Mapper وسنحسبها في الـ Controller
                 .ForMember(dest => dest.TotalExpectedAssets, opt => opt.Ignore())
                 .ForMember(dest => dest.MissingCount, opt => opt.Ignore());
-            CreateMap<AuditDetail, AuditDetailDTO>()
-    .ForMember(dest => dest.AssetName, opt =>
-        opt.MapFrom(src => src.Asset != null ? src.Asset.Name : "غير معروف"));
+            CreateMap<AuditDetail, AuditDetailDTO>();
+            CreateMap<AuditDetail, ScannedItemDTO>()
+                // ربط المعرفات الأساسية
+                .ForMember(dest => dest.DetailId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.Barcode, opt => opt.MapFrom(src => src.ScannedBarCode))
+
+                // جلب بيانات الأصل مع معالجة حالة الأصل الغريب (Asset == null)
+                // بما أن AssetNumber أصبح int، نضع 0 في حال لم يكن هناك أصل
+                .ForMember(dest => dest.AssetNumber, opt => opt.MapFrom(src => src.Asset != null ? src.Asset.Id : 0))
+                .ForMember(dest => dest.AssetName, opt => opt.MapFrom(src => src.Asset != null ? src.Asset.Name : "أصل غير مسجل (غريب)"))
+                .ForMember(dest => dest.Specifications, opt => opt.MapFrom(src => src.Asset != null ? src.Asset.Description : ""))
+
+                // جلب مكان الأصل المفترض (المكان الأصلي للأصل) لمعرفة من أين تم نقله إذا كان Misplaced
+                .ForMember(dest => dest.RoomName, opt => opt.MapFrom(src =>
+                    src.Asset != null && src.Asset.Room != null ? src.Asset.Room.Name : "غير معروف"))
+                .ForMember(dest => dest.FloorName, opt => opt.MapFrom(src =>
+                    src.Asset != null && src.Asset.Room != null && src.Asset.Room.Floor != null ? src.Asset.Room.Floor.Name : "غير معروف"))
+
+                // الحالة ووقت المسح
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(src => src.Status))
+                .ForMember(dest => dest.ScannedAt, opt => opt.MapFrom(src => src.ScannedAt))
+
+                // تجاهل الخصائص الخاصة بالواجهة فقط
+                .ForMember(dest => dest.IsJustAdded, opt => opt.Ignore());
         }
         
     }

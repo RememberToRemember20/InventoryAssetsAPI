@@ -47,7 +47,7 @@ namespace InventoryAssetsAPI.Queries
             {
                 SessionId = session.Id,
                 SessionTitle = session.Title,
-                ClosedAt = session.CompletedAt ?? DateTime.Now,
+                ClosedAt = session.CompletedAt ??  default(DateTime),
                 Items = new List<ReconciliationItemDTO>()
             };
 
@@ -71,7 +71,8 @@ namespace InventoryAssetsAPI.Queries
                         AssetName = item.AssetName,
                         FloorName = item.FloorNameAtAudit,
                         RoomName = item.RoomNameAtAudit,
-                        Status = item.Status
+                        Status = item.Status,
+                        
                     });
                 }
 

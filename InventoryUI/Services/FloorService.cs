@@ -150,5 +150,32 @@ namespace InventoryUI.Services
             return await _http.GetFromJsonAsync<List<AuditSessionListDTO>>("api/Session/sessions")
                    ?? new List<AuditSessionListDTO>();
         }
+        public async Task<ScannedItemDTO> AddScanToSessionAsync(int sessionId, long barcode)
+        {
+            var requestBody = new { Barcode = barcode };
+            var response = await _http.PostAsJsonAsync($"api/Session/{sessionId}/scan", requestBody);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                // قراءة رسالة الخطأ من الـ API (مثل "الباركود غير صحيح" أو "الجلسة مغلقة")
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"فشل إضافة الباركود: {error}");
+            }
+
+            var result = await response.Content.ReadFromJsonAsync<ScannedItemDTO>();
+            return result ?? throw new Exception("لم يتم استرجاع بيانات العنصر المضاف.");
+        }
+
+        // 2. خدمة إغلاق الجلسة
+        public async Task FinalizeAuditSessionAsync(int sessionId)
+        {
+            var response = await _http.PostAsync($"api/Session/{sessionId}/finalize", null);
+
+            if (!response.IsSuccessStatusCode)
+            {
+                var error = await response.Content.ReadAsStringAsync();
+                throw new Exception($"فشل إغلاق الجلسة: {error}");
+            }
+        }
     }
 }

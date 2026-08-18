@@ -245,5 +245,20 @@ namespace InventoryAssetsAPI.Controllers
             var result = await _mediator.Send(query);
             return Ok(result);
         }
+        [HttpPost("{sessionId}/scan")]
+        public async Task<ActionResult<ScannedItemDTO>> AddScanToSession(int sessionId, [FromBody] ScanRequest request)
+        {
+            var command = new AddScanCommand { SessionId = sessionId, Barcode = request.Barcode };
+            var result = await _mediator.Send(command);
+            return Ok(result);
+        }
+
+        [HttpPost("{sessionId}/finalize")]
+        public async Task<IActionResult> FinalizeSession(int sessionId)
+        {
+            var command = new FinalizeSessionCommand { SessionId = sessionId };
+            await _mediator.Send(command);
+            return Ok(new { Message = "تم إغلاق الجلسة بنجاح." });
+        }
     }
 }

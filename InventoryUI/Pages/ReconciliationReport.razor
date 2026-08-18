@@ -1,111 +1,185 @@
 ﻿@page "/audit/report/{SessionId:int}"
-@using Shared.DTOs
+@* نربط الواجهة بملف الكود الخلفي *@
 
 
-<div class="container-fluid mt-4">
+<div class="container-fluid mt-4 pb-5">
+    <!-- الترويسة وأزرار الإجراءات -->
     <div class="d-flex justify-content-between align-items-center mb-4">
-        <h2 class="text-primary">تقرير مطابقة الجرد</h2>
-        <button class="btn btn-outline-secondary d-print-none" @onclick="PrintReport">
-            <i class="bi bi-printer"></i> طباعة التقرير
-        </button>
+        <h2 class="text-primary fw-bold">
+            <i class="bi bi-file-earmark-bar-graph"></i> تقرير مطابقة الجرد
+        </h2>
+        <div class="d-flex gap-2 d-print-none">
+            <button class="btn btn-outline-secondary" @onclick="PrintReport">
+                <i class="bi bi-printer"></i> طباعة التقرير
+            </button>
+
+            @* زر إغلاق الجلسة يظهر فقط إذا كانت مفتوحة *@
+            @if (Report != null && Report.ClosedAt == default(DateTime))
+            {
+                <button class="btn btn-danger shadow-sm" @onclick="FinalizeSession" disabled="@IsFinalizing">
+                    @if (IsFinalizing)
+                    {
+                        <span class="spinner-border spinner-border-sm"></span>
+                    }
+                    else
+                    {
+                        <i class="bi bi-check-all"></i>
+                       <span>اعتماد وإغلاق الجلسة</span>
+                   
+                    }
+                </button>
+            }
+        </div>
     </div>
 
     @if (IsLoading)
     {
         <div class="text-center mt-5">
-            <div class="spinner-border text-primary" role="status"></div>
-            <h5 class="mt-2">جاري تحميل التقرير...</h5>
+            <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;"></div>
+            <h5 class="mt-3 text-muted">جاري تحميل بيانات التقرير...</h5>
         </div>
     }
     else if (Report == null)
     {
-        <div class="alert alert-danger">لم يتم العثور على بيانات لهذه الجلسة.</div>
+        <div class="alert alert-danger shadow-sm">
+            <i class="bi bi-exclamation-triangle"></i> لم يتم العثور على بيانات لهذه الجلسة.
+        </div>
     }
     else
     {
+        @* --- بداية قسم الإدخال التفاعلي (يظهر فقط إذا الجلسة مفتوحة) --- *@
+        @if (Report.ClosedAt == default(DateTime))
+        {
+            <div class="card mb-4 border-success shadow-sm bg-light d-print-none">
+                <div class="card-body">
+                    <label class="form-label fw-bold text-success">
+                        <i class="bi bi-upc-scan"></i> مسح باركود جديد وإضافته للجرد الحالي:
+                    </label>
+                    <div class="input-group input-group-lg">
+                        <input type="text"
+                               class="form-control @(ScanErrorMessage != null ? "is-invalid" : "")"
+                               placeholder="مرر قارئ الباركود أو أدخل الرقم..."
+                               @bind="NewBarcode"
+                               @bind:event="oninput"
+                               @onkeyup="HandleBarcodeScan"
+                               @ref="BarcodeImporter"
+                               disabled="@IsProcessingScan" />
+                        <button class="btn btn-success px-4" @onclick="SubmitScanInternal" disabled="@IsProcessingScan">
+                            @if (IsProcessingScan)
+                            {
+                                <span class="spinner-border spinner-border-sm"></span>
+                            }
+                            else
+                            {
+                                <i class="bi bi-plus-lg"></i> <span>إضافة</span>
+                            }
+                        </button>
+                    </div>
+                    @if (ScanErrorMessage != null)
+                    {
+                        <div class="invalid-feedback d-block fw-bold mt-2">
+                            <i class="bi bi-exclamation-circle"></i> @ScanErrorMessage
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+        @* --- نهاية قسم الإدخال --- *@
+
         <!-- البطاقات الإحصائية العلوية -->
         <div class="row mb-4 d-print-none">
             <div class="col-md-4">
-                <div class="card text-white bg-success shadow-sm">
+                <div class="card text-white bg-success shadow-sm h-100">
                     <div class="card-body">
                         <h5 class="card-title">الأصول المطابقة</h5>
-                        <h2 class="mb-0">@Report.TotalMatched</h2>
+                        <h2 class="mb-0 fw-bold">@Report.TotalMatched</h2>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-dark bg-warning shadow-sm">
+                <div class="card text-dark bg-warning shadow-sm h-100">
                     <div class="card-body">
                         <h5 class="card-title">الأصول المنقولة (موجودة هنا خطأ)</h5>
-                        <h2 class="mb-0">@Report.TotalMisplaced</h2>
+                        <h2 class="mb-0 fw-bold">@Report.TotalMisplaced</h2>
                     </div>
                 </div>
             </div>
             <div class="col-md-4">
-                <div class="card text-white bg-danger shadow-sm">
+                <div class="card text-white bg-danger shadow-sm h-100">
                     <div class="card-body">
                         <h5 class="card-title">الأصول المفقودة (لم تُجرد)</h5>
-                        <h2 class="mb-0">@Report.TotalMissing</h2>
+                        <h2 class="mb-0 fw-bold">@Report.TotalMissing</h2>
                     </div>
                 </div>
             </div>
         </div>
 
         <!-- معلومات الجلسة -->
-        <div class="card mb-4 border-0 shadow-sm">
-            <div class="card-header bg-light fw-bold">
-                تفاصيل الجلسة: @Report.SessionTitle (رقم: #@Report.SessionId)
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-dark text-white fw-bold d-flex justify-content-between">
+                <span>تفاصيل الجلسة: @Report.SessionTitle (رقم: #@Report.SessionId)</span>
+                @if (Report.ClosedAt == default(DateTime))
+                {
+                    <span class="badge bg-danger">قيد الجرد (مفتوحة)</span>
+                }
+                else
+                {
+                    <span class="badge bg-success">مكتملة (مغلقة)</span>
+                }
             </div>
-            
+
             <!-- جدول التفاصيل -->
-            <div class="table-responsive">
-                <table class="table table-hover table-striped mb-0 align-middle">
-                    <thead class="table-dark">
-                        <tr>
-                            <th>الباركود</th>
-                            <th>رقم الأصل</th>
-                            <th>الاسم والمواصفات</th>
-                            <th>الطابق</th>
-                            <th>الغرفة</th>
-                            <th>الحالة</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var item in Report.Items)
-                        {
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0 align-middle">
+                        <thead class="table-light">
                             <tr>
-                                <td><span class="badge bg-secondary font-monospace">@item.Barcode</span></td>
-                                <td>@item.AssetNumber</td>
-                                <td>
-                                    <div class="fw-bold">@item.AssetName</div>
-                                    <div class="text-muted small">@item.Specifications</div>
-                                </td>
-                                <td>@item.FloorName</td>
-                                <td>@item.RoomName</td>
-                                <td>
-                                    @if (item.Status == ScanStatus.Matched)
-                                    {
-                                        <span class="badge bg-success">مطابق لمكانه</span>
-                                    }
-                                    else if (item.Status == ScanStatus.Misplaced)
-                                    {
-                                        <div class="d-flex flex-column">
-                                            <span class="badge bg-warning text-dark mb-1">منقول (موجود هنا بالخطأ)</span>
-                                            <small class="text-danger fw-bold">
-                                                <i class="bi bi-info-circle"></i>
-                                                مسجل أساساً في: @(string.IsNullOrEmpty(item.RoomName) ? "غير محدد" : item.RoomName)
-                                            </small>
-                                        </div>
-                                    }
-                                    else if (item.Status == ScanStatus.Unexpected)
-                                    {
-                                        <span class="badge bg-danger">مفقود (لم يُجرد)</span>
-                                    }
-                                </td>
+                                <th>الباركود</th>
+                                <th>رقم الأصل</th>
+                                <th>الاسم والمواصفات</th>
+                                <th>الطابق</th>
+                                <th>الغرفة</th>
+                                <th>الحالة</th>
                             </tr>
-                        }
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            @foreach (var item in Report.Items)
+                            {
+                                // استخدام خلفية مميزة للعنصر المضاف حديثاً (اختياري لتحسين UX)
+                                <tr class="@(item.IsJustAdded ? "table-success" : "")">
+                                    <td><span class="badge bg-secondary font-monospace">@item.Barcode</span></td>
+                                    <td>@item.AssetNumber</td>
+                                    <td>
+                                        <div class="fw-bold text-dark">@item.AssetName</div>
+                                        <div class="text-muted small">@item.Specifications</div>
+                                    </td>
+                                    <td>@item.FloorName</td>
+                                    <td>@item.RoomName</td>
+                                    <td>
+                                        @if (item.Status == Shared.DTOs.ScanStatus.Matched)
+                                        {
+                                            <span class="badge bg-success"><i class="bi bi-check"></i> مطابق لمكانه</span>
+                                        }
+                                        else if (item.Status == Shared.DTOs.ScanStatus.Misplaced)
+                                        {
+                                            <div class="d-flex flex-column">
+                                                <span class="badge bg-warning text-dark mb-1">منقول (موجود هنا بالخطأ)</span>
+                                                <small class="text-danger fw-bold">
+                                                    <i class="bi bi-arrow-right-short"></i> مسجل أساساً في: @(string.IsNullOrEmpty(item.RoomName) ? "غير محدد" : item.RoomName)
+                                                </small>
+                                            </div>
+                                        }
+                                        else 
+                                        {
+                                            <span class="badge bg-danger"><i class="bi bi-question-circle"></i> غير مسجل (غريب)</span>
+                                        }
+                                        
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
             </div>
         </div>
     }

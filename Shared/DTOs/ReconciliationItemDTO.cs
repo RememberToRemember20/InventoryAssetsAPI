@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Text;
+using System.Text.Json.Serialization;
 
 namespace Shared.DTOs
 {
@@ -16,5 +17,7 @@ namespace Shared.DTOs
         public string RoomName { get; set; } = string.Empty;
 
         public ScanStatus Status { get; set; }
+        [JsonIgnore]
+        public bool IsJustAdded { get; set; }
     }
 }
