@@ -59,6 +59,14 @@ namespace InventoryAssetsAPI.Controllers
 
                 if (session.IsClosed)
                     return BadRequest("لا يمكن مسح أصول جديدة، جلسة الجرد مغلقة.");
+                var existingScan = await _unitOfWork.AuditDetail.Get(
+                d => d.AuditSessionId == dto.AuditSessionId && d.ScannedBarCode == dto.BarCode
+                );
+
+                if (existingScan != null)
+                {
+                    return BadRequest("هذا الأصل تم جرده مسبقاً في هذه الجلسة!");
+                }
 
                 // 2. البحث عن الأصل وجلب بيانات الغرفة المرتبطة به باستخدام دالة الـ Include في الـ Repository
                 var asset = await _unitOfWork.Assets.Get(
@@ -248,9 +256,23 @@ namespace InventoryAssetsAPI.Controllers
         [HttpPost("{sessionId}/scan")]
         public async Task<ActionResult<ScannedItemDTO>> AddScanToSession(int sessionId, [FromBody] ScanRequest request)
         {
-            var command = new AddScanCommand { SessionId = sessionId, Barcode = request.Barcode };
+            try
+            {   
+                var command = new AddScanCommand { SessionId = sessionId, Barcode = request.Barcode };
             var result = await _mediator.Send(command);
             return Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                // إرجاع الخطأ كـ 400 Bad Request مع نص الرسالة فقط
+                return BadRequest(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                // في حال كان MediatR يغلف الخطأ
+                var realMessage = ex.InnerException != null ? ex.InnerException.Message : ex.Message;
+                return BadRequest(realMessage);
+            }
         }
 
         [HttpPost("{sessionId}/finalize")]

@@ -33,7 +33,13 @@ namespace InventoryAssetsAPI.Queries
             // تحويل الباركود القادم من الواجهة (string) إلى long 
             // (إذا كان الباركود في الـ Command من نوع long أساساً، يمكنك إزالة هذا السطر واستخدام request.Barcode مباشرة)
             long scannedBarcodeValue = request.Barcode;
+            var isAlreadyScanned = await _unitOfWork.AuditDetail.Get(
+                d => d.AuditSessionId == session.Id && d.ScannedBarCode == scannedBarcodeValue);
 
+            if (isAlreadyScanned != null)
+            {
+                throw new InvalidOperationException("هذا الأصل تم جرده مسبقاً في هذه الجلسة!");
+            }
             // 2. البحث عن الأصل في قاعدة البيانات باستخدام الباركود
             // نستخدم Include لجلب بيانات الغرفة والطابق لكي يستطيع AutoMapper قراءتها
             var asset = await _unitOfWork.Assets.Get(
@@ -79,7 +85,7 @@ namespace InventoryAssetsAPI.Queries
             // 5. حفظ البيانات في قاعدة البيانات
             await  _unitOfWork.AuditDetail.Insert(auditDetail);
             await _unitOfWork.Save();
-
+            auditDetail.Asset = asset;
             // 6. التحويل إلى DTO للإعادة للواجهة (AutoMapper سيتكفل بكل الحقول بناءً على الـ Profile)
             var resultDto = _mapper.Map<ScannedItemDTO>(auditDetail);
 
