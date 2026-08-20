@@ -1,5 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore.Query;
+using Shared.DTOs;
 using System.Linq.Expressions;
+using X.PagedList;
 
 namespace InventoryAssetsAPI.IRepository
 {
@@ -16,10 +18,10 @@ namespace InventoryAssetsAPI.IRepository
         Task Delete(int id);
         void DeleteRange(IEnumerable<T> entities);
         void Update(T entity);
-        //Task<IPagedList<T>> GetPagingAll(
-        // Expression<Func<T, bool>> expression = null,
-        // Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
-        // Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null, RequestParams request = null);
+        Task<PagedResult<T>> GetPagingAll(
+         Expression<Func<T, bool>> expression = null,
+         Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null,
+         Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null, RequestParams request = null);
 
     }
 }

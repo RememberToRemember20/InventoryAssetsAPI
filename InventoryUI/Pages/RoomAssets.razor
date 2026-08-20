@@ -2,7 +2,6 @@
 
 <div class="container-fluid mt-4 mb-5" style="max-width: 1100px;">
 
-    <!-- أزرار أعلى الصفحة والعنوان -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <button class="btn btn-outline-secondary btn-sm mb-2" @onclick="GoBack">
@@ -13,7 +12,6 @@
             </h3>
         </div>
         <div>
-            <!-- زر إضافة أصل جديد في هذه الغرفة مباشرة -->
             <a href="/rooms/@RoomId/add-asset" class="btn btn-success">
                 <i class="bi bi-plus-circle me-1"></i> إضافة أصل جديد
             </a>
@@ -29,24 +27,25 @@
     }
     else
     {
-        <!-- شريط البحث والفلترة -->
         <div class="card border-0 shadow-sm mb-4">
             <div class="card-body p-3">
                 <div class="row g-2 align-items-center">
                     <div class="col-md-6">
                         <div class="input-group">
                             <span class="input-group-text bg-white"><i class="bi bi-search text-muted"></i></span>
-                            <input type="text" class="form-control" placeholder="ابحث برقم الباركود أو اسم الأصل..." @bind="SearchTerm" @bind:event="oninput" />
+                            <!-- ربط البحث بحدث OnSearchChanged ليطلب من السيرفر عند كل تغيير -->
+                            <input type="text" class="form-control" placeholder="ابحث برقم الباركود أو اسم الأصل..."
+                                   value="@SearchTerm" @onchange="OnSearchChanged" />
                         </div>
                     </div>
                     <div class="col-md-6 text-md-end text-muted small">
-                        إجمالي الأصول المعروضة: <strong class="text-dark">@FilteredAssets.Count()</strong>
+                        إجمالي الأصول المعروضة: <strong class="text-dark">@(MetaData?.TotalCount ?? 0)</strong>
                     </div>
                 </div>
             </div>
         </div>
 
-        @if (!FilteredAssets.Any())
+        @if (Assets == null || !Assets.Any())
         {
             <div class="alert alert-info text-center py-5 shadow-sm">
                 <i class="bi bi-inbox fs-1 d-block mb-2 text-muted"></i>
@@ -56,7 +55,6 @@
         }
         else
         {
-            <!-- جدول عرض الأصول -->
             <div class="card border-0 shadow-sm overflow-hidden">
                 <div class="table-responsive">
                     <table class="table table-hover align-middle mb-0">
@@ -70,7 +68,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @foreach (var asset in FilteredAssets)
+                            @foreach (var asset in Assets)
                             {
                                 <tr>
                                     <td class="fw-bold text-muted">#@asset.Id</td>
@@ -87,15 +85,50 @@
                                         <button class="btn btn-sm btn-outline-secondary me-1" title="تعديل" @onclick="() => EditAsset(asset.Id)">
                                             <i class="bi bi-pencil"></i> تعديل
                                         </button>
-                                       <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmDelete(asset.Id, asset.Name)">
-                                           <i class="bi bi-trash"></i> حذف
-                                       </button>
+                                        <button class="btn btn-outline-danger btn-sm" @onclick="() => ConfirmDelete(asset.Id, asset.Name)">
+                                            <i class="bi bi-trash"></i> حذف
+                                        </button>
                                     </td>
                                 </tr>
                             }
                         </tbody>
                     </table>
                 </div>
+
+                <!-- شريط التنقل بين الصفحات -->
+                @if (MetaData != null && MetaData.TotalPages > 1)
+                {
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light d-print-none">
+                        <div class="text-muted small">
+                            عرض الصفحة <strong>@MetaData.CurrentPage</strong> من إجمالي <strong>@MetaData.TotalPages</strong> صفحات
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm m-0">
+                                <li class="page-item @(MetaData.HasPrevious ? "" : "disabled")">
+                                    <button class="page-link" @onclick="() => SelectedPage(MetaData.CurrentPage - 1)">
+                                        <i class="bi bi-chevron-right"></i> السابق
+                                    </button>
+                                </li>
+
+                                @for (int i = 1; i <= MetaData.TotalPages; i++)
+                                {
+                                    int pageIndex = i;
+                                    <li class="page-item @(i == MetaData.CurrentPage ? "active" : "")">
+                                        <button class="page-link" @onclick="() => SelectedPage(pageIndex)">
+                                            @pageIndex
+                                        </button>
+                                    </li>
+                                }
+
+                                <li class="page-item @(MetaData.HasNext ? "" : "disabled")">
+                                    <button class="page-link" @onclick="() => SelectedPage(MetaData.CurrentPage + 1)">
+                                        التالي <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                </li>
+                            </ul>
+                        </nav>
+                    </div>
+                }
             </div>
         }
     }

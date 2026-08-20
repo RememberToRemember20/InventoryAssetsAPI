@@ -60,16 +60,19 @@ namespace InventoryUI.Services
             string errorMessage = await response.Content.ReadAsStringAsync();
             return (false, string.IsNullOrWhiteSpace(errorMessage) ? "حدث خطأ أثناء حفظ الأصل." : errorMessage);
         }
-        public async Task<List<GetAsset>> GetAssetsByRoomAsync(int roomId)
+        public async Task<PagedResult<GetAsset>> GetAssetsByRoomAsync(int roomId, int pageNumber = 1, int pageSize = 10, string searchTerm = "")
         {
             try
             {
-                var result = await _http.GetFromJsonAsync<List<GetAsset>>($"api/Asset/GetAssets/{roomId}");
-                return result ?? new List<GetAsset>();
+                // دمج المتغيرات في الرابط (مع تشفير كلمة البحث لتجنب أخطاء المسافات)
+                var url = $"api/Asset/GetAssets/{roomId}?pageNumber={pageNumber}&pageSize={pageSize}&searchTerm={Uri.EscapeDataString(searchTerm)}";
+                var result = await _http.GetFromJsonAsync<PagedResult<GetAsset>>(url);
+
+                return result ?? new PagedResult<GetAsset>();
             }
             catch
             {
-                return new List<GetAsset>();
+                return new PagedResult<GetAsset>();
             }
         }
         public async Task<bool> DeleteAssetAsync(int id)
@@ -145,10 +148,10 @@ namespace InventoryUI.Services
 
             return report;
         }
-        public async Task<List<AuditSessionListDTO>> GetAllAuditSessionsAsync()
+        public async Task<PagedResult<AuditSessionListDTO>> GetAllAuditSessionsAsync(int pageNumber = 1, int pageSize = 10)
         {
-            return await _http.GetFromJsonAsync<List<AuditSessionListDTO>>("api/Session/sessions")
-                   ?? new List<AuditSessionListDTO>();
+            return await _http.GetFromJsonAsync<PagedResult<AuditSessionListDTO>>($"api/Session/sessions?pageNumber={pageNumber}&pageSize={pageSize}")
+                   ?? new PagedResult<AuditSessionListDTO>();
         }
         public async Task<ScannedItemDTO> AddScanToSessionAsync(int sessionId, long barcode)
         {

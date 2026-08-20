@@ -247,9 +247,15 @@ namespace InventoryAssetsAPI.Controllers
             return Ok(result);
         }
         [HttpGet("sessions")]
-        public async Task<ActionResult<List<AuditSessionListDTO>>> GetAllSessions()
+        public async Task<ActionResult<List<AuditSessionListDTO>>> GetAllSessions([FromQuery] RequestParams requestParams)
         {
-            var query = new GetAllAuditSessionsQuery();
+            // بناء كائن RequestParams يدوياً من المتغيرات القادمة في الرابط
+            if (requestParams == null || requestParams.PageNumber < 1)
+            {
+                requestParams = new RequestParams { PageNumber = 1, PageSize = 10 };
+            }
+
+            var query = new GetAllAuditSessionsQuery { RequestParams = requestParams };
             var result = await _mediator.Send(query);
             return Ok(result);
         }

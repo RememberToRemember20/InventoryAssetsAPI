@@ -1,8 +1,12 @@
 ﻿using InventoryAssetsAPI.DataAccess;
+using InventoryAssetsAPI.ExtensionsServices;
 using InventoryAssetsAPI.IRepository;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Query;
+using Shared.DTOs;
 using System.Linq.Expressions;
+using X.PagedList;
+
 
 namespace InventoryAssetsAPI.Repository
 {
@@ -66,25 +70,26 @@ namespace InventoryAssetsAPI.Repository
             return await query.AsNoTracking().ToListAsync();
         }
 
-        //public async Task<IPagedList<T>> GetPagingAll(
-        // Expression<Func<T, bool>> expression = null,
-        // Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null, RequestParams request = null)
-        //{
-        //    IQueryable<T> query = _db;
-        //    if (expression != null)
-        //    {
-        //        query = query.Where(expression);
-        //    }
-        //    if (include != null)
-        //    {
-        //        query = include(query);
-        //    }
-        //    if (orderBy != null)
-        //    {
-        //        query = orderBy(query);
-        //    }
-        //    return await query.AsNoTracking().ToPagedListAsync(request.PageNumber, request.PageSize);
-        //}
+        public async Task<PagedResult<T>> GetPagingAll(
+         Expression<Func<T, bool>> expression = null,
+         Func<IQueryable<T>, IOrderedQueryable<T>> orderBy = null, Func<IQueryable<T>, IIncludableQueryable<T, object>> include = null, RequestParams request = null)
+        {
+            request ??= new RequestParams { PageNumber = 1, PageSize = 10 };
+            IQueryable<T> query = _db;
+            if (expression != null)
+            {
+                query = query.Where(expression);
+            }
+            if (include != null)
+            {
+                query = include(query);
+            }
+            if (orderBy != null)
+            {
+                query = orderBy(query);
+            }
+            return await query.AsNoTracking().ToPagedResultAsync(request.PageNumber, request.PageSize);
+        }
 
         public async Task Insert(T entity)
         {

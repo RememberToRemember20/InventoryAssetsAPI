@@ -21,60 +21,84 @@ namespace InventoryUI.Pages
         public IJSRuntime JSRuntime { get; set; } = default!;
 
         protected List<Shared.DTOs.GetAsset> Assets { get; set; } = new();
+        protected MetaData MetaData { get; set; } = new MetaData(); // إضافة بيانات الصفحات
+
         protected bool IsLoading { get; set; } = true;
         protected string SearchTerm { get; set; } = string.Empty;
 
-        protected IEnumerable<Shared.DTOs.GetAsset> FilteredAssets =>
-            Assets.Where(a =>
-                string.IsNullOrWhiteSpace(SearchTerm) ||
-                a.Name.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase) ||
-                a.BarCode.ToString().Contains(SearchTerm) ||
-                (!string.IsNullOrEmpty(a.Description) && a.Description.Contains(SearchTerm, StringComparison.OrdinalIgnoreCase))
-            );
+        // متغيرات التنقل
+        protected int CurrentPage { get; set; } = 1;
+        protected int PageSize { get; set; } = 10;
 
         protected override async Task OnInitializedAsync()
         {
             await LoadAssets();
-           
-
         }
 
         private async Task LoadAssets()
         {
             IsLoading = true;
-            Assets = await AssetService.GetAssetsByRoomAsync(RoomId);
+            StateHasChanged();
+
+            var pagedResult = await AssetService.GetAssetsByRoomAsync(RoomId, CurrentPage, PageSize, SearchTerm);
+
+            Assets = pagedResult.Items;
+            MetaData = pagedResult.MetaData;
+
+            if (MetaData != null && MetaData.CurrentPage > 0)
+            {
+                CurrentPage = MetaData.CurrentPage;
+            }
+
             IsLoading = false;
+            StateHasChanged();
         }
+
+        // دالة تنفذ عند الكتابة في شريط البحث أو مسحه
+        protected async Task OnSearchChanged(ChangeEventArgs e)
+        {
+            SearchTerm = e.Value?.ToString() ?? string.Empty;
+            CurrentPage = 1; // عند البحث الجديد نعود دائماً للصفحة الأولى
+            await LoadAssets();
+        }
+
+        // دالة تغيير الصفحة
+        protected async Task SelectedPage(int page)
+        {
+            if (MetaData != null && page >= 1 && page <= MetaData.TotalPages && page != CurrentPage)
+            {
+                CurrentPage = page;
+                await LoadAssets();
+            }
+        }
+
         private async Task ConfirmDelete(int id, string assetName)
         {
-            // إظهار رسالة تأكيد للمستخدم عبر JS Confirm
-            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"هل أنت تأكد من رغبتك في حذف الأصل '{assetName}'؟");
+            bool confirmed = await JSRuntime.InvokeAsync<bool>("confirm", $"هل أنت متأكد من رغبتك في حذف الأصل '{assetName}'؟");
 
             if (confirmed)
             {
                 var isSuccess = await AssetService.DeleteAssetAsync(id);
                 if (isSuccess)
                 {
-                    // إزالة العنصر من القائمة المحلية فوراً لتحديث الواجهة دون الحاجة لإعادة تحميل الصفحة
-                    Assets.RemoveAll(a => a.Id == id);
-
-                    // يمكنك إضافة إشعار نجاح هنا (Toast / Alert)
+                    // إعادة تحميل البيانات من السيرفر لضمان تحديث الصفحات بشكل صحيح
+                    await LoadAssets();
                 }
                 else
                 {
-                    // إظهار رسالة خطأ في حال فشل الحذف
                     await JSRuntime.InvokeVoidAsync("alert", "حدث خطأ أثناء محاولة حذف الأصل.");
                 }
             }
         }
+
         protected void EditAsset(int id)
         {
             NavigationManager.NavigateTo($"/edit-asset/{id}");
         }
+
         protected void GoBack()
         {
             NavigationManager.NavigateTo($"/floors");
         }
-
     }
 }

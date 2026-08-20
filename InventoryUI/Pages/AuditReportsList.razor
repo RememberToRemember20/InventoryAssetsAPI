@@ -61,7 +61,6 @@
                                         }
                                     </td>
                                     <td class="text-center">
-                                        <!-- زر عرض تقرير المطابقة -->
                                         <button class="btn btn-sm btn-outline-primary"
                                                 @onclick="() => ViewReport(session.Id)">
                                             <i class="bi bi-eye"></i> عرض التقرير
@@ -72,7 +71,48 @@
                         </tbody>
                     </table>
                 </div>
+
+                <!-- شريط التنقل بين الصفحات (Pagination Controls) -->
+                @if (MetaData != null && MetaData.TotalPages > 1)
+                {
+                    <div class="d-flex justify-content-between align-items-center p-3 border-top bg-light d-print-none">
+                        <div class="text-muted small">
+                            عرض الصفحة <strong>@MetaData.CurrentPage</strong> من إجمالي <strong>@MetaData.TotalPages</strong> صفحات (إجمالي الجلسات: @MetaData.TotalCount)
+                        </div>
+                        <nav aria-label="Page navigation">
+                            <ul class="pagination pagination-sm m-0">
+
+                                <!-- زر السابق -->
+                                <li class="page-item @(MetaData.HasPrevious ? "" : "disabled")">
+                                    <button class="page-link" @onclick="() => SelectedPage(MetaData.CurrentPage - 1)">
+                                        <i class="bi bi-chevron-right"></i> السابق
+                                    </button>
+                                </li>
+
+                                <!-- أرقام الصفحات -->
+                                @for (int i = 1; i <= MetaData.TotalPages; i++)
+                                {
+                                    int pageIndex = i;
+                                    <li class="page-item @(i == MetaData.CurrentPage ? "active" : "")">
+                                        <button class="page-link" @onclick="() => SelectedPage(pageIndex)">
+                                            @pageIndex
+                                        </button>
+                                    </li>
+                                }
+
+                                <!-- زر التالي -->
+                                <li class="page-item @(MetaData.HasNext ? "" : "disabled")">
+                                    <button class="page-link" @onclick="() => SelectedPage(MetaData.CurrentPage + 1)">
+                                        التالي <i class="bi bi-chevron-left"></i>
+                                    </button>
+                                </li>
+
+                            </ul>
+                        </nav>
+                    </div>
+                }
             }
         </div>
     </div>
 </div>
+

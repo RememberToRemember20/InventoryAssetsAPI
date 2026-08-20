@@ -1,0 +1,9 @@
+﻿@inject NavigationManager Navigation
+
+@code {
+    protected override void OnInitialized()
+    {
+        // التحويل لصفحة الدخول بدون إعادة تحميل الصفحة بالكامل
+        Navigation.NavigateTo("login");
+    }
+}

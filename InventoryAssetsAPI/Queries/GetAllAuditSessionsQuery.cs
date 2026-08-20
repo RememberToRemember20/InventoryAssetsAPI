@@ -3,6 +3,6 @@ using Shared.DTOs;
 
 namespace InventoryAssetsAPI.Queries
 {
-    public class GetAllAuditSessionsQuery : IRequest<List<AuditSessionListDTO>> { }
+    public class GetAllAuditSessionsQuery : IRequest<PagedResult<AuditSessionListDTO>> { public RequestParams RequestParams { get; set; } }
     
 }

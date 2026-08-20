@@ -12,7 +12,7 @@ namespace InventoryUI.Services
         Task<bool> AddRoomAsync(PostRoom roomDto);
         Task<GetFloor?> GetFloorWithRoomsAsync(int floorId);
         Task<(bool Success, string Message)> AddAssetAsync(PostAsset assetDto);
-        Task<List<GetAsset>> GetAssetsByRoomAsync(int roomId);
+        Task<PagedResult<GetAsset>> GetAssetsByRoomAsync(int roomId, int pageNumber = 1, int pageSize = 10, string searchTerm = "");
         Task<bool> DeleteAssetAsync(int id);
         Task<GetAsset?> GetAssetByIdAsync(int id);
         Task<bool> UpdateAssetAsync(int id, PostAsset assetDto);
@@ -21,7 +21,7 @@ namespace InventoryUI.Services
         Task<AuditSummaryDTO> GetSessionSummaryAsync(int sessionId);
         Task<string> ReconcileSessionAsync(int sessionId);
         Task<ReconciliationReportDTO> GetReconciliationReportAsync(int sessionId);
-        Task<List<AuditSessionListDTO>> GetAllAuditSessionsAsync();
+        Task<PagedResult<AuditSessionListDTO>> GetAllAuditSessionsAsync(int pageNumber, int pageSize);
         Task<ScannedItemDTO> AddScanToSessionAsync(int sessionId, long barcode);
         Task FinalizeAuditSessionAsync(int sessionId);
     }

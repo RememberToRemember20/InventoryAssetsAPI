@@ -2,6 +2,7 @@
 using InventoryAssetsAPI.IRepository;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Shared.DTOs;
 
 namespace InventoryAssetsAPI.Controllers
 {
@@ -34,10 +35,34 @@ namespace InventoryAssetsAPI.Controllers
             return Ok(postAsset);
         }
         [HttpGet("GetAssets/{roomid}")]
-        public async Task<IActionResult> GetAssets(int roomid)
+        public async Task<IActionResult> GetAssets(
+     int roomid,
+     [FromQuery] int pageNumber = 1,
+     [FromQuery] int pageSize = 10,
+     [FromQuery] string searchTerm = "")
         {
-            var assets = await _unitOfWork.Assets.GetAll(q=>q.RoomId == roomid);
-            var result = _mapper.Map<List<Shared.DTOs.GetAsset>>(assets);
+            var requestParams = new RequestParams { PageNumber = pageNumber < 1 ? 1 : pageNumber, PageSize = pageSize < 1 ? 10 : pageSize };
+
+            // جلب البيانات مع الفلترة (حسب رقم الغرفة وكلمة البحث) والتقطيع
+            var pagedAssets = await _unitOfWork.Assets.GetPagingAll(
+                expression: a => a.RoomId == roomid &&
+                                 (string.IsNullOrEmpty(searchTerm) ||
+                                  a.Name.Contains(searchTerm) ||
+                                  a.BarCode.ToString().Contains(searchTerm) ||
+                                  a.Description.Contains(searchTerm)),
+                request: requestParams
+            );
+
+            // تحويل قائمة Items فقط إلى DTO
+            var mappedItems = _mapper.Map<List<Shared.DTOs.GetAsset>>(pagedAssets.Items);
+
+            // إعادة التغليف بـ PagedResult مع الحفاظ على MetaData
+            var result = new PagedResult<Shared.DTOs.GetAsset>
+            {
+                Items = mappedItems,
+                MetaData = pagedAssets.MetaData
+            };
+
             return Ok(result);
         }
         [HttpDelete("DeleteAsset/{id}")]

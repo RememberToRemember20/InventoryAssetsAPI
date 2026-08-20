@@ -15,6 +15,9 @@ namespace InventoryUI.Pages
 
         protected bool IsLoading { get; set; } = true;
         protected List<AuditSessionListDTO> Sessions { get; set; } = new();
+        private MetaData MetaData { get; set; } = new MetaData();
+        private int CurrentPage = 1;
+        private int PageSize = 10;
 
         protected override async Task OnInitializedAsync()
         {
@@ -26,8 +29,15 @@ namespace InventoryUI.Pages
             try
             {
                 IsLoading = true;
-                // دالة تجلب جميع الجلسات من الـ API
-                Sessions = await AuditService.GetAllAuditSessionsAsync();
+                // استدعاء الخدمة مع تمرير رقم الصفحة الحالية
+                var pagedResult = await AuditService.GetAllAuditSessionsAsync(CurrentPage, PageSize);
+
+                Sessions = pagedResult.Items;
+                MetaData = pagedResult.MetaData;
+                if (MetaData != null && MetaData.CurrentPage > 0)
+                {
+                    CurrentPage = MetaData.CurrentPage;
+                }
             }
             catch (Exception ex)
             {
@@ -36,6 +46,14 @@ namespace InventoryUI.Pages
             finally
             {
                 IsLoading = false;
+            }
+        }
+        private async Task SelectedPage(int page)
+        {
+            if (page >= 1 && page <= MetaData.TotalPages && page != CurrentPage)
+            {
+                CurrentPage = page;
+                await LoadSessions();
             }
         }
 
@@ -47,7 +65,7 @@ namespace InventoryUI.Pages
 
         protected void NavigateToNewAudit()
         {
-            NavManager.NavigateTo("/audit/new"); // مسار صفحة بدء جرد جديد
+            NavManager.NavigateTo("/audit"); // مسار صفحة بدء جرد جديد
         }
     }
 }
